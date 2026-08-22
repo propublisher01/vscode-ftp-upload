@@ -1,0 +1,6 @@
+node_modules/
+out/
+*.vsix
+*.zip
+/ftp-sync.json
+DEVELOPMENT.md

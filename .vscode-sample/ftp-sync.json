@@ -1,0 +1,17 @@
+{
+  "host": "ftp.example.com",
+  "port": 21,
+  "secure": true,
+  "user": "mylogin",
+  "localRoot": ".",
+  "remoteRoot": "/www/site",
+  "ignore": [
+    ".git/**",
+    "node_modules/**",
+    "*.log",
+    ".vscode/**"
+  ],
+  "uploadOnSave": true,
+  "checkRemoteModifiedTime": true,
+  "clockToleranceSeconds": 5
+}

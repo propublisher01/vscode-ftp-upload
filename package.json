@@ -1,0 +1,188 @@
+{
+  "name": "ftp-upload-on-save",
+  "displayName": "FTP/FTPS Upload on Save",
+  "description": "Automatically upload files to an FTP/FTPS server on save, with a remote file explorer, conflict detection, and secure credential storage.",
+  "version": "0.1.0",
+  "publisher": "proPublisher",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "ftp",
+    "ftps",
+    "sftp",
+    "upload",
+    "deploy",
+    "sync"
+  ],
+  "icon": "icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/propublisher01/vscode-ftp-upload.git"
+  },
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "ftpUpload.syncAll",
+        "title": "FTP: Sync All Files"
+      },
+      {
+        "command": "ftpUpload.toggleAutoUpload",
+        "title": "FTP: Toggle Auto-Upload on Save"
+      },
+      {
+        "command": "ftpUpload.testConnection",
+        "title": "FTP: Test Connection"
+      },
+      {
+        "command": "ftpUpload.resetPassword",
+        "title": "FTP: Reset Password"
+      },
+      {
+        "command": "ftpUpload.configureFolder",
+        "title": "FTP: Configure Connection..."
+      },
+      {
+        "command": "ftpUpload.refreshRemoteFiles",
+        "title": "FTP: Refresh Remote Files",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "ftpUpload.openRemoteFile",
+        "title": "FTP: Open Remote File"
+      },
+      {
+        "command": "ftpUpload.downloadRemote",
+        "title": "FTP: Download",
+        "icon": "$(cloud-download)"
+      },
+      {
+        "command": "ftpUpload.deleteRemote",
+        "title": "FTP: Delete Remote",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "ftpUpload.downloadFromServer",
+        "title": "FTP: Download from Server"
+      },
+      {
+        "command": "ftpUpload.uploadToServer",
+        "title": "FTP: Upload to Server"
+      }
+    ],
+    "views": {
+      "explorer": [
+        {
+          "id": "ftpUpload.remoteFiles",
+          "name": "FTP Remote Files"
+        }
+      ]
+    },
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "ftpUpload.configureFolder",
+          "when": "explorerResourceIsFolder",
+          "group": "7_ftpUpload"
+        },
+        {
+          "command": "ftpUpload.downloadFromServer",
+          "when": "resourceScheme == file",
+          "group": "7_ftpUpload"
+        },
+        {
+          "command": "ftpUpload.uploadToServer",
+          "when": "resourceScheme == file",
+          "group": "7_ftpUpload"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "ftpUpload.refreshRemoteFiles",
+          "when": "view == ftpUpload.remoteFiles",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "ftpUpload.downloadRemote",
+          "when": "view == ftpUpload.remoteFiles && viewItem =~ /^ftp/",
+          "group": "inline@1"
+        },
+        {
+          "command": "ftpUpload.downloadRemote",
+          "when": "view == ftpUpload.remoteFiles && viewItem =~ /^ftp/",
+          "group": "7_ftpActions@1"
+        },
+        {
+          "command": "ftpUpload.deleteRemote",
+          "when": "view == ftpUpload.remoteFiles && viewItem =~ /^ftp/",
+          "group": "inline@2"
+        },
+        {
+          "command": "ftpUpload.deleteRemote",
+          "when": "view == ftpUpload.remoteFiles && viewItem =~ /^ftp/",
+          "group": "7_ftpActions@2"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "ftpUpload.openRemoteFile",
+          "when": "false"
+        },
+        {
+          "command": "ftpUpload.downloadRemote",
+          "when": "false"
+        },
+        {
+          "command": "ftpUpload.deleteRemote",
+          "when": "false"
+        },
+        {
+          "command": "ftpUpload.downloadFromServer",
+          "when": "false"
+        },
+        {
+          "command": "ftpUpload.uploadToServer",
+          "when": "false"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "FTP Upload on Save",
+      "properties": {
+        "ftpUpload.configFile": {
+          "type": "string",
+          "default": ".vscode/ftp-sync.json",
+          "description": "Path to the config file (relative to the workspace root)"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./ --noEmit && node esbuild.js",
+    "watch": "node esbuild.js --watch",
+    "vscode:prepublish": "npm run compile",
+    "package": "vsce package",
+    "publish": "vsce publish"
+  },
+  "devDependencies": {
+    "@types/node": "^20.x",
+    "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^2.24.0",
+    "esbuild": "^0.28.2",
+    "typescript": "^5.4.0"
+  },
+  "dependencies": {
+    "basic-ftp": "^5.0.5",
+    "minimatch": "^9.0.4"
+  }
+}
