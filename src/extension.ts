@@ -4,6 +4,7 @@ import * as fs from "fs";
 import { loadConfig, resetPassword, getPassword, saveConfig, configFilePath, FtpSyncConfig } from "./config";
 import { RemoteFilesProvider, RemoteItem } from "./remoteTree";
 import { FtpManager, OperationCancelledError } from "./ftpManager";
+import { confirmSafeToUpload } from "./deploySafe";
 
 // One FtpManager instance per workspace folder — useful when several
 // projects with different configs/servers are open together.
@@ -471,6 +472,15 @@ export function activate(context: vscode.ExtensionContext) {
       const config = loadConfig(folder);
       if (!config || !config.uploadOnSave) return;
 
+      if (config.scanBeforeUpload) {
+        const relative = path.relative(folder.uri.fsPath, document.uri.fsPath);
+        const proceed = await confirmSafeToUpload(document.uri.fsPath, relative);
+        if (!proceed) {
+          vscode.window.setStatusBarMessage(`FTP: upload of "${relative}" skipped.`, 5000);
+          return;
+        }
+      }
+
       const manager = getManager(context, folder);
       manager?.enqueueUpload(document.uri.fsPath);
     })
@@ -633,6 +643,7 @@ export function activate(context: vscode.ExtensionContext) {
           remoteRoot,
           ignore: existing?.ignore ?? [".git/**", "node_modules/**"],
           uploadOnSave: existing?.uploadOnSave ?? true,
+          scanBeforeUpload: existing?.scanBeforeUpload ?? true,
           checkRemoteModifiedTime: existing?.checkRemoteModifiedTime ?? true,
           clockToleranceSeconds: existing?.clockToleranceSeconds ?? 5,
         };

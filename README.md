@@ -48,6 +48,21 @@ Configurable in `ftp-sync.json`:
 ```
 Set `checkRemoteModifiedTime` to `false` to disable this check entirely. `clockToleranceSeconds` absorbs residual measurement imprecision (increase it if you get false positives).
 
+## Optional: DeploySafe integration
+
+If [DeploySafe](https://marketplace.visualstudio.com/items?itemName=proPublisher.deploy-safe)
+is also installed, every auto-upload on save is checked against it first. If it finds a
+critical issue in the file (an exposed secret, hardcoded credentials...), a dialog lists
+what was found and lets you cancel that upload or send it anyway. Nothing changes if
+DeploySafe isn't installed — this is entirely optional.
+
+```json
+{
+  "scanBeforeUpload": true
+}
+```
+Set to `false` to skip this check even with DeploySafe installed.
+
 ## Browsing remote files
 
 An **"FTP Remote Files"** view appears in the explorer (below the workspace folders), with one node per configured folder. Expanding it browses the remote tree; clicking a file downloads a read-only temporary copy.

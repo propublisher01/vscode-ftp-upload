@@ -11,6 +11,7 @@ export interface FtpSyncConfig {
   remoteRoot: string;
   ignore: string[];
   uploadOnSave: boolean;
+  scanBeforeUpload: boolean;
   checkRemoteModifiedTime: boolean;
   clockToleranceSeconds: number;
 }
@@ -21,6 +22,7 @@ const DEFAULTS: Partial<FtpSyncConfig> = {
   localRoot: ".",
   ignore: [".git/**", "node_modules/**"],
   uploadOnSave: true,
+  scanBeforeUpload: true,
   checkRemoteModifiedTime: true,
   clockToleranceSeconds: 5,
 };

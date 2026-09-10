@@ -12,6 +12,7 @@
     ".vscode/**"
   ],
   "uploadOnSave": true,
+  "scanBeforeUpload": true,
   "checkRemoteModifiedTime": true,
   "clockToleranceSeconds": 5
 }

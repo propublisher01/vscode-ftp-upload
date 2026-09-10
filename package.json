@@ -2,7 +2,7 @@
   "name": "ftp-upload-on-save",
   "displayName": "FTP/FTPS Upload on Save",
   "description": "Automatically upload files to an FTP/FTPS server on save, with a remote file explorer, conflict detection, and secure credential storage.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "publisher": "proPublisher",
   "license": "MIT",
   "engines": {

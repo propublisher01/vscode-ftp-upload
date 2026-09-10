@@ -1,6 +1,7 @@
 .vscode/**
 src/**
 .vscode-sample/**
+test-fixtures/**
 tsconfig.json
 esbuild.js
 DEVELOPMENT.md

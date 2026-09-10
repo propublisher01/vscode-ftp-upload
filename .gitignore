@@ -4,3 +4,8 @@ out/
 *.zip
 /ftp-sync.json
 DEVELOPMENT.md
+
+# Local test fixture contains an intentionally realistic-looking fake
+# secret (to validate the DeploySafe integration), which trips GitHub's
+# push protection / secret scanning. Keep it local only.
+test-fixtures/
