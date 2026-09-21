@@ -11,3 +11,5 @@ node_modules/**
 *.vsix
 *.zip
 ftp-sync.json
+out/**
+!out/extension.js
