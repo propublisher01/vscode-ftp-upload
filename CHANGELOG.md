@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.3.0
 
 - French translation of the whole interface (commands, views, settings, messages), following VS Code's display language.
 - `FTP: Toggle Auto-Upload on Save` now works: session-only pause/resume of upload on save (never writes `ftp-sync.json`), with a status bar reminder while paused.
