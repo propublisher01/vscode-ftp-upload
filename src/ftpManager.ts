@@ -136,7 +136,7 @@ export class FtpManager {
     this.connecting = (async () => {
       const password = await getPassword(this.context, this.workspaceFolder);
       if (!password) {
-        throw new Error("FTP password not provided");
+        throw new Error(vscode.l10n.t("FTP password not provided"));
       }
 
       const client = new Client();
@@ -160,7 +160,7 @@ export class FtpManager {
     }
 
     if (!this.client) {
-      throw new Error("Could not connect to FTP server");
+      throw new Error(vscode.l10n.t("Could not connect to FTP server"));
     }
     return this.client;
   }
@@ -301,18 +301,27 @@ export class FtpManager {
     );
 
     if (conflict) {
-      this.statusBar.text = `$(warning) Conflict ${fileName}`;
+      this.statusBar.text = vscode.l10n.t("$(warning) Conflict {0}", fileName);
       const when = remoteDate ? remoteDate.toLocaleString() : "";
+      const uploadAnyway = vscode.l10n.t("Upload anyway");
       vscode.window
         .showWarningMessage(
-          `FTP: "${fileName}" was modified on the server (${when}) after your last local save — automatic upload skipped.`,
-          "Upload anyway"
+          vscode.l10n.t(
+            "FTP: \"{0}\" was modified on the server ({1}) after your last local save — automatic upload skipped.",
+            fileName,
+            when
+          ),
+          uploadAnyway
         )
         .then((choice) => {
-          if (choice === "Upload anyway") {
+          if (choice === uploadAnyway) {
             this.uploadFileTo(item.localPath, item.remotePath).catch((err) =>
               vscode.window.showErrorMessage(
-                `FTP Upload: failed for ${fileName} — ${err}`
+                vscode.l10n.t(
+                  "FTP Upload: failed for {0} — {1}",
+                  fileName,
+                  String(err)
+                )
               )
             );
           }
@@ -320,18 +329,18 @@ export class FtpManager {
       return;
     }
 
-    this.statusBar.text = `$(sync~spin) Uploading ${fileName}...`;
+    this.statusBar.text = vscode.l10n.t("$(sync~spin) Uploading {0}...", fileName);
 
     try {
       await this.uploadFileTo(item.localPath, item.remotePath);
 
       const now = new Date().toLocaleTimeString();
-      this.statusBar.text = `$(check) Synced ${fileName} (${now})`;
+      this.statusBar.text = vscode.l10n.t("$(check) Synced {0} ({1})", fileName, now);
       this.onUploadComplete?.();
     } catch (err) {
-      this.statusBar.text = `$(error) Upload failed ${fileName}`;
+      this.statusBar.text = vscode.l10n.t("$(error) Upload failed {0}", fileName);
       vscode.window.showErrorMessage(
-        `FTP Upload: failed for ${fileName} — ${err}`
+        vscode.l10n.t("FTP Upload: failed for {0} — {1}", fileName, String(err))
       );
     }
   }
@@ -463,10 +472,14 @@ export class FtpManager {
   async testConnection(): Promise<boolean> {
     try {
       await this.ensureConnected();
-      vscode.window.showInformationMessage("FTP: connection successful ✓");
+      vscode.window.showInformationMessage(
+        vscode.l10n.t("FTP: connection successful ✓")
+      );
       return true;
     } catch (err) {
-      vscode.window.showErrorMessage(`FTP: connection failed — ${err}`);
+      vscode.window.showErrorMessage(
+        vscode.l10n.t("FTP: connection failed — {0}", String(err))
+      );
       return false;
     }
   }

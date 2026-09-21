@@ -31,7 +31,7 @@ export class RemoteItem extends vscode.TreeItem {
       this.description = size !== undefined ? formatSize(size) : undefined;
       this.command = {
         command: "ftpUpload.openRemoteFile",
-        title: "Open (read-only)",
+        title: vscode.l10n.t("Open (read-only)"),
         arguments: [this],
       };
     }
@@ -99,7 +99,11 @@ export class RemoteFilesProvider
         });
     } catch (err) {
       vscode.window.showErrorMessage(
-        `FTP: could not list "${element.remotePath}" — ${err}`
+        vscode.l10n.t(
+          "FTP: could not list \"{0}\" — {1}",
+          element.remotePath,
+          String(err)
+        )
       );
       return [];
     }

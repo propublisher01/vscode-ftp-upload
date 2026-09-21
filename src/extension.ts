@@ -10,6 +10,11 @@ import { confirmSafeToUpload } from "./deploySafe";
 // projects with different configs/servers are open together.
 const managers = new Map<string, FtpManager>();
 
+// Session-only override of "uploadOnSave", set by the "Toggle Auto-Upload on
+// Save" command. Takes precedence over ftp-sync.json without ever writing to
+// it (that file is meant to be committed). Keyed by workspace folder URI.
+const autoUploadOverride = new Map<string, boolean>();
+
 // Reference assigned in activate() — lets getManager() wire up refreshing
 // the remote view after every successful upload.
 let remoteProviderRef: RemoteFilesProvider | undefined;
@@ -45,7 +50,7 @@ async function pickTargetFolders(): Promise<
 > {
   const folders = vscode.workspace.workspaceFolders;
   if (!folders || folders.length === 0) {
-    vscode.window.showWarningMessage("No workspace open.");
+    vscode.window.showWarningMessage(vscode.l10n.t("No workspace open."));
     return null;
   }
 
@@ -53,10 +58,10 @@ async function pickTargetFolders(): Promise<
     return [folders[0]];
   }
 
-  const ALL = "All folders";
+  const ALL = vscode.l10n.t("All folders");
   const pick = await vscode.window.showQuickPick(
     [ALL, ...folders.map((f) => f.name)],
-    { placeHolder: "Which folder to sync?" }
+    { placeHolder: vscode.l10n.t("Which folder to sync?") }
   );
 
   if (!pick) return null; // cancelled (Esc)
@@ -93,7 +98,9 @@ export function activate(context: vscode.ExtensionContext) {
       async (item?: RemoteItem) => {
         if (!item) {
           vscode.window.showInformationMessage(
-            "FTP: click a file in the \"FTP Remote Files\" view to open it."
+            vscode.l10n.t(
+              "FTP: click a file in the \"FTP Remote Files\" view to open it."
+            )
           );
           return;
         }
@@ -106,12 +113,18 @@ export function activate(context: vscode.ExtensionContext) {
           const doc = await vscode.workspace.openTextDocument(localPath);
           await vscode.window.showTextDocument(doc, { preview: true });
           vscode.window.setStatusBarMessage(
-            "FTP: read-only temporary copy — changes won't be re-uploaded",
+            vscode.l10n.t(
+              "FTP: read-only temporary copy — changes won't be re-uploaded"
+            ),
             6000
           );
         } catch (err) {
           vscode.window.showErrorMessage(
-            `FTP: could not open "${item.remotePath}" — ${err}`
+            vscode.l10n.t(
+              "FTP: could not open \"{0}\" — {1}",
+              item.remotePath,
+              String(err)
+            )
           );
         }
       }
@@ -149,32 +162,36 @@ export function activate(context: vscode.ExtensionContext) {
           // For a single file that already exists locally, refine the
           // message with a date comparison (clock-skew adjusted) rather
           // than a generic warning.
-          let label = `${resolved.length} item(s)`;
+          let label = vscode.l10n.t("{0} item(s)", resolved.length);
           if (resolved.length === 1 && !resolved[0].item.isDirectory) {
             const { conflict } = await manager.checkDownloadConflict(
               resolved[0].localPath,
               resolved[0].item.remotePath
             );
             label = conflict
-              ? `"${resolved[0].relative}" (your local copy looks newer than the remote version — you will lose these changes)`
+              ? vscode.l10n.t(
+                  "\"{0}\" (your local copy looks newer than the remote version — you will lose these changes)",
+                  resolved[0].relative
+                )
               : `"${resolved[0].relative}"`;
           } else if (resolved.length === 1) {
             label = `"${resolved[0].relative}"`;
           }
 
+          const downloadLabel = vscode.l10n.t("Download");
           const confirm = await vscode.window.showWarningMessage(
-            `Overwrite ${label} locally with the remote version?`,
+            vscode.l10n.t("Overwrite {0} locally with the remote version?", label),
             { modal: true },
-            "Download"
+            downloadLabel
           );
-          if (confirm !== "Download") return;
+          if (confirm !== downloadLabel) return;
         }
 
         try {
           await vscode.window.withProgress(
             {
               location: vscode.ProgressLocation.Notification,
-              title: `FTP: downloading (${resolved.length} item(s))`,
+              title: vscode.l10n.t("FTP: downloading ({0} item(s))", resolved.length),
               cancellable: true,
             },
             async (progress, token) => {
@@ -192,14 +209,26 @@ export function activate(context: vscode.ExtensionContext) {
                     (fileName) => {
                       count++;
                       progress.report({
-                        message: `[${i + 1}/${resolved.length}] ${relative} — ${count} file(s) — ${fileName}`,
+                        message: vscode.l10n.t(
+                          "[{0}/{1}] {2} — {3} file(s) — {4}",
+                          i + 1,
+                          resolved.length,
+                          relative,
+                          count,
+                          fileName
+                        ),
                       });
                     },
                     token
                   );
                 } else {
                   progress.report({
-                    message: `[${i + 1}/${resolved.length}] ${relative}`,
+                    message: vscode.l10n.t(
+                      "[{0}/{1}] {2}",
+                      i + 1,
+                      resolved.length,
+                      relative
+                    ),
                   });
                   await manager.downloadFileTo(t.remotePath, localPath);
                 }
@@ -207,14 +236,16 @@ export function activate(context: vscode.ExtensionContext) {
             }
           );
           vscode.window.showInformationMessage(
-            `FTP: ${resolved.length} item(s) downloaded.`
+            vscode.l10n.t("FTP: {0} item(s) downloaded.", resolved.length)
           );
         } catch (err) {
           if (err instanceof OperationCancelledError) {
-            vscode.window.showInformationMessage("FTP: download cancelled.");
+            vscode.window.showInformationMessage(
+              vscode.l10n.t("FTP: download cancelled.")
+            );
           } else {
             vscode.window.showErrorMessage(
-              `FTP: download failed — ${err}`
+              vscode.l10n.t("FTP: download failed — {0}", String(err))
             );
           }
         }
@@ -235,22 +266,28 @@ export function activate(context: vscode.ExtensionContext) {
 
         const label =
           targets.length === 1
-            ? `the remote ${targets[0].isDirectory ? "folder" : "file"} "${targets[0].remotePath}"`
-            : `${targets.length} selected remote items`;
+            ? targets[0].isDirectory
+              ? vscode.l10n.t("the remote folder \"{0}\"", targets[0].remotePath)
+              : vscode.l10n.t("the remote file \"{0}\"", targets[0].remotePath)
+            : vscode.l10n.t("{0} selected remote items", targets.length);
 
+        const deleteLabel = vscode.l10n.t("Delete");
         const confirm = await vscode.window.showWarningMessage(
-          `Permanently delete ${label}? This action cannot be undone.`,
+          vscode.l10n.t(
+            "Permanently delete {0}? This action cannot be undone.",
+            label
+          ),
           { modal: true },
-          "Delete"
+          deleteLabel
         );
-        if (confirm !== "Delete") return;
+        if (confirm !== deleteLabel) return;
 
         let deleted = 0;
         try {
           await vscode.window.withProgress(
             {
               location: vscode.ProgressLocation.Notification,
-              title: `FTP: deleting (${targets.length} item(s))`,
+              title: vscode.l10n.t("FTP: deleting ({0} item(s))", targets.length),
               cancellable: true,
             },
             async (progress, token) => {
@@ -259,7 +296,12 @@ export function activate(context: vscode.ExtensionContext) {
                   throw new OperationCancelledError();
                 }
                 progress.report({
-                  message: `[${deleted + 1}/${targets.length}] ${t.remotePath}`,
+                  message: vscode.l10n.t(
+                    "[{0}/{1}] {2}",
+                    deleted + 1,
+                    targets.length,
+                    t.remotePath
+                  ),
                 });
                 if (t.isDirectory) {
                   await manager.deleteDirectory(t.remotePath);
@@ -272,17 +314,20 @@ export function activate(context: vscode.ExtensionContext) {
           );
           remoteProvider.refresh();
           vscode.window.showInformationMessage(
-            `FTP: ${deleted} item(s) deleted.`
+            vscode.l10n.t("FTP: {0} item(s) deleted.", deleted)
           );
         } catch (err) {
           remoteProvider.refresh();
           if (err instanceof OperationCancelledError) {
             vscode.window.showInformationMessage(
-              `FTP: deletion cancelled (${deleted} item(s) already deleted).`
+              vscode.l10n.t(
+                "FTP: deletion cancelled ({0} item(s) already deleted).",
+                deleted
+              )
             );
           } else {
             vscode.window.showErrorMessage(
-              `FTP: deletion failed — ${err}`
+              vscode.l10n.t("FTP: deletion failed — {0}", String(err))
             );
           }
         }
@@ -305,7 +350,7 @@ export function activate(context: vscode.ExtensionContext) {
         const manager = getManager(context, folder);
         if (!config || !manager) {
           vscode.window.showWarningMessage(
-            `FTP: no ftp-sync.json config in "${folder.name}".`
+            vscode.l10n.t("FTP: no ftp-sync.json config in \"{0}\".", folder.name)
           );
           return;
         }
@@ -320,29 +365,36 @@ export function activate(context: vscode.ExtensionContext) {
 
         const isDirectory = fs.statSync(clickedUri.fsPath).isDirectory();
 
-        let warningMessage = `Overwrite "${relative}" locally with the server version? Local changes not yet uploaded will be lost.`;
+        let warningMessage = vscode.l10n.t(
+          "Overwrite \"{0}\" locally with the server version? Local changes not yet uploaded will be lost.",
+          relative
+        );
         if (!isDirectory) {
           const { conflict } = await manager.checkDownloadConflict(
             clickedUri.fsPath,
             remotePath
           );
           if (conflict) {
-            warningMessage = `Your local copy of "${relative}" looks newer than the remote version — downloading will overwrite these local changes. Continue?`;
+            warningMessage = vscode.l10n.t(
+              "Your local copy of \"{0}\" looks newer than the remote version — downloading will overwrite these local changes. Continue?",
+              relative
+            );
           }
         }
 
+        const downloadLabel = vscode.l10n.t("Download");
         const confirm = await vscode.window.showWarningMessage(
           warningMessage,
           { modal: true },
-          "Download"
+          downloadLabel
         );
-        if (confirm !== "Download") return;
+        if (confirm !== downloadLabel) return;
 
         try {
           await vscode.window.withProgress(
             {
               location: vscode.ProgressLocation.Notification,
-              title: `FTP: downloading "${relative}"`,
+              title: vscode.l10n.t("FTP: downloading \"{0}\"", relative),
               cancellable: true,
             },
             async (progress, token) => {
@@ -354,7 +406,7 @@ export function activate(context: vscode.ExtensionContext) {
                   (fileName) => {
                     count++;
                     progress.report({
-                      message: `${count} file(s) — ${fileName}`,
+                      message: vscode.l10n.t("{0} file(s) — {1}", count, fileName),
                     });
                   },
                   token
@@ -365,14 +417,16 @@ export function activate(context: vscode.ExtensionContext) {
             }
           );
           vscode.window.showInformationMessage(
-            `FTP: "${relative}" downloaded from server.`
+            vscode.l10n.t("FTP: \"{0}\" downloaded from server.", relative)
           );
         } catch (err) {
           if (err instanceof OperationCancelledError) {
-            vscode.window.showInformationMessage("FTP: download cancelled.");
+            vscode.window.showInformationMessage(
+              vscode.l10n.t("FTP: download cancelled.")
+            );
           } else {
             vscode.window.showErrorMessage(
-              `FTP: download failed — ${err}`
+              vscode.l10n.t("FTP: download failed — {0}", String(err))
             );
           }
         }
@@ -411,7 +465,7 @@ export function activate(context: vscode.ExtensionContext) {
           await vscode.window.withProgress(
             {
               location: vscode.ProgressLocation.Notification,
-              title: `FTP: uploading (${targets.length} item(s))`,
+              title: vscode.l10n.t("FTP: uploading ({0} item(s))", targets.length),
               cancellable: true,
             },
             async (progress, token) => {
@@ -429,7 +483,7 @@ export function activate(context: vscode.ExtensionContext) {
                     (fileName) => {
                       count++;
                       progress.report({
-                        message: `${count} file(s) — ${fileName}`,
+                        message: vscode.l10n.t("{0} file(s) — {1}", count, fileName),
                       });
                     },
                     token,
@@ -444,19 +498,33 @@ export function activate(context: vscode.ExtensionContext) {
             const list =
               conflicts.length <= 5
                 ? conflicts.join(", ")
-                : `${conflicts.slice(0, 5).join(", ")}, +${conflicts.length - 5} more`;
+                : vscode.l10n.t(
+                    "{0}, +{1} more",
+                    conflicts.slice(0, 5).join(", "),
+                    conflicts.length - 5
+                  );
             vscode.window.showWarningMessage(
-              `FTP: upload finished, but ${conflicts.length} file(s) skipped because they are newer on the server: ${list}`
+              vscode.l10n.t(
+                "FTP: upload finished, but {0} file(s) skipped because they are newer on the server: {1}",
+                conflicts.length,
+                list
+              )
             );
           } else {
-            vscode.window.showInformationMessage("FTP: upload finished.");
+            vscode.window.showInformationMessage(
+              vscode.l10n.t("FTP: upload finished.")
+            );
           }
           remoteProvider.refresh();
         } catch (err) {
           if (err instanceof OperationCancelledError) {
-            vscode.window.showInformationMessage("FTP: upload cancelled.");
+            vscode.window.showInformationMessage(
+              vscode.l10n.t("FTP: upload cancelled.")
+            );
           } else {
-            vscode.window.showErrorMessage(`FTP: upload failed — ${err}`);
+            vscode.window.showErrorMessage(
+              vscode.l10n.t("FTP: upload failed — {0}", String(err))
+            );
           }
         }
       }
@@ -470,19 +538,80 @@ export function activate(context: vscode.ExtensionContext) {
       if (!folder) return;
 
       const config = loadConfig(folder);
-      if (!config || !config.uploadOnSave) return;
+      if (!config) return;
+      const autoUploadEnabled =
+        autoUploadOverride.get(folder.uri.toString()) ?? config.uploadOnSave;
+      if (!autoUploadEnabled) return;
 
       if (config.scanBeforeUpload) {
         const relative = path.relative(folder.uri.fsPath, document.uri.fsPath);
         const proceed = await confirmSafeToUpload(document.uri.fsPath, relative);
         if (!proceed) {
-          vscode.window.setStatusBarMessage(`FTP: upload of "${relative}" skipped.`, 5000);
+          vscode.window.setStatusBarMessage(
+            vscode.l10n.t("FTP: upload of \"{0}\" skipped.", relative),
+            5000
+          );
           return;
         }
       }
 
       const manager = getManager(context, folder);
       manager?.enqueueUpload(document.uri.fsPath);
+    })
+  );
+
+  // Status bar reminder shown while auto-upload is paused via the toggle
+  // command — an in-memory override is easy to forget, so keep it visible.
+  const pausedIndicator = vscode.window.createStatusBarItem(
+    vscode.StatusBarAlignment.Right,
+    99
+  );
+  pausedIndicator.text = vscode.l10n.t("$(circle-slash) FTP: auto-upload off");
+  pausedIndicator.tooltip = vscode.l10n.t("Click to re-enable auto-upload on save");
+  pausedIndicator.command = "ftpUpload.toggleAutoUpload";
+  context.subscriptions.push(pausedIndicator);
+
+  const updatePausedIndicator = () => {
+    if ([...autoUploadOverride.values()].some((enabled) => !enabled)) {
+      pausedIndicator.show();
+    } else {
+      pausedIndicator.hide();
+    }
+  };
+
+  // Command: toggle auto-upload on save for this session, without touching
+  // ftp-sync.json. Wins over the file's "uploadOnSave" until VS Code closes.
+  context.subscriptions.push(
+    vscode.commands.registerCommand("ftpUpload.toggleAutoUpload", async () => {
+      const folders = await pickTargetFolders();
+      if (!folders) return;
+
+      for (const folder of folders) {
+        const config = loadConfig(folder);
+        if (!config) {
+          vscode.window.showWarningMessage(
+            vscode.l10n.t("FTP: no ftp-sync.json config in \"{0}\".", folder.name)
+          );
+          continue;
+        }
+
+        const key = folder.uri.toString();
+        const enabled = !(autoUploadOverride.get(key) ?? config.uploadOnSave);
+        autoUploadOverride.set(key, enabled);
+
+        vscode.window.showInformationMessage(
+          enabled
+            ? vscode.l10n.t(
+                "FTP [{0}]: auto-upload on save enabled (until VS Code is closed).",
+                folder.name
+              )
+            : vscode.l10n.t(
+                "FTP [{0}]: auto-upload on save paused (until VS Code is closed).",
+                folder.name
+              )
+        );
+      }
+      updatePausedIndicator();
     })
   );
 
@@ -497,7 +626,10 @@ export function activate(context: vscode.ExtensionContext) {
         const manager = getManager(context, folder);
         if (!manager) {
           vscode.window.showWarningMessage(
-            `FTP: no ftp-sync.json config in "${folder.name}", skipped.`
+            vscode.l10n.t(
+              "FTP: no ftp-sync.json config in \"{0}\", skipped.",
+              folder.name
+            )
           );
           continue;
         }
@@ -508,7 +640,11 @@ export function activate(context: vscode.ExtensionContext) {
         );
         await manager.syncAll(files.map((f) => f.fsPath));
         vscode.window.showInformationMessage(
-          `FTP [${folder.name}]: ${files.length} file(s) queued for upload.`
+          vscode.l10n.t(
+            "FTP [{0}]: {1} file(s) queued for upload.",
+            folder.name,
+            files.length
+          )
         );
       }
     })
@@ -524,7 +660,7 @@ export function activate(context: vscode.ExtensionContext) {
         const manager = getManager(context, folder);
         if (!manager) {
           vscode.window.showWarningMessage(
-            `FTP: no ftp-sync.json config in "${folder.name}".`
+            vscode.l10n.t("FTP: no ftp-sync.json config in \"{0}\".", folder.name)
           );
           continue;
         }
@@ -547,7 +683,7 @@ export function activate(context: vscode.ExtensionContext) {
         const config = loadConfig(folder);
         if (!config) {
           vscode.window.showWarningMessage(
-            `FTP: no ftp-sync.json config in "${folder.name}".`
+            vscode.l10n.t("FTP: no ftp-sync.json config in \"{0}\".", folder.name)
           );
           continue;
         }
@@ -561,7 +697,7 @@ export function activate(context: vscode.ExtensionContext) {
         const ok = await manager?.testConnection();
         if (ok) {
           vscode.window.showInformationMessage(
-            `FTP [${folder.name}]: new password saved.`
+            vscode.l10n.t("FTP [{0}]: new password saved.", folder.name)
           );
         }
       }
@@ -581,7 +717,7 @@ export function activate(context: vscode.ExtensionContext) {
 
         if (!folder) {
           vscode.window.showWarningMessage(
-            "This folder isn't part of an open workspace."
+            vscode.l10n.t("This folder isn't part of an open workspace.")
           );
           return;
         }
@@ -589,27 +725,28 @@ export function activate(context: vscode.ExtensionContext) {
         const existing = loadConfig(folder);
 
         const host = await vscode.window.showInputBox({
-          prompt: `FTP host for "${folder.name}"`,
+          prompt: vscode.l10n.t("FTP host for \"{0}\"", folder.name),
           value: existing?.host ?? "",
           ignoreFocusOut: true,
         });
         if (!host) return; // cancelled
 
         const portStr = await vscode.window.showInputBox({
-          prompt: "Port",
+          prompt: vscode.l10n.t("Port"),
           value: String(existing?.port ?? 21),
           ignoreFocusOut: true,
         });
         if (!portStr) return;
 
+        const ftpsLabel = vscode.l10n.t("FTPS (secure)");
         const securePick = await vscode.window.showQuickPick(
-          ["FTPS (secure)", "FTP (insecure)"],
-          { placeHolder: "Connection type", ignoreFocusOut: true }
+          [ftpsLabel, vscode.l10n.t("FTP (insecure)")],
+          { placeHolder: vscode.l10n.t("Connection type"), ignoreFocusOut: true }
         );
         if (!securePick) return;
 
         const user = await vscode.window.showInputBox({
-          prompt: "FTP username",
+          prompt: vscode.l10n.t("FTP username"),
           value: existing?.user ?? "",
           ignoreFocusOut: true,
         });
@@ -628,7 +765,7 @@ export function activate(context: vscode.ExtensionContext) {
             : existing?.remoteRoot ?? "/";
 
         const remoteRoot = await vscode.window.showInputBox({
-          prompt: "Remote root folder",
+          prompt: vscode.l10n.t("Remote root folder"),
           value: suggestedRemote,
           ignoreFocusOut: true,
         });
@@ -637,7 +774,7 @@ export function activate(context: vscode.ExtensionContext) {
         const config: FtpSyncConfig = {
           host,
           port: parseInt(portStr, 10) || 21,
-          secure: securePick.startsWith("FTPS"),
+          secure: securePick === ftpsLabel,
           user,
           localRoot: existing?.localRoot ?? ".",
           remoteRoot,

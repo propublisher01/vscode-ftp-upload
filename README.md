@@ -93,7 +93,13 @@ Right-click a folder (or several files/folders via `Ctrl`/`Cmd`+click) → **FTP
 - `FTP: Sync All Files` — full workspace upload (useful after a `git pull` or for initial setup)
 - `FTP: Test Connection` — checks that credentials and connectivity work
 - `FTP: Reset Password` — clears the stored password, asks for a new one, and tests the connection (useful after a server-side password change)
-- `FTP: Toggle Auto-Upload on Save` — enables/disables auto-upload without touching the config file
+- `FTP: Toggle Auto-Upload on Save` — pauses/resumes auto-upload for the current session without touching the config file (it takes precedence over `uploadOnSave` until VS Code is closed; a status bar item reminds you while it is paused, and clicking it re-enables it)
+
+The file/folder actions (**Upload to Server**, **Download from Server**, **Configure Connection...**) are grouped in an **FTP** submenu of the explorer's right-click menu.
+
+## Languages
+
+The interface (commands, messages, settings) is available in **English** and **French**. It follows VS Code's display language — install the *French Language Pack* and set `Configure Display Language` to `fr` to get it in French; any other language falls back to English.
 
 ## Known limitations (v0.1)
 

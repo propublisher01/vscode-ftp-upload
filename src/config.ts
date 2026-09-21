@@ -51,7 +51,11 @@ export function loadConfig(
     return { ...DEFAULTS, ...raw } as FtpSyncConfig;
   } catch (err) {
     vscode.window.showErrorMessage(
-      `FTP Upload: invalid config file (${configPath}) — ${err}`
+      vscode.l10n.t(
+        "FTP Upload: invalid config file ({0}) — {1}",
+        configPath,
+        String(err)
+      )
     );
     return null;
   }
@@ -82,7 +86,7 @@ export async function getPassword(
 
   if (!pw) {
     pw = await vscode.window.showInputBox({
-      prompt: `FTP password for ${workspaceFolder.name}`,
+      prompt: vscode.l10n.t("FTP password for {0}", workspaceFolder.name),
       password: true,
       ignoreFocusOut: true,
     });

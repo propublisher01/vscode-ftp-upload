@@ -53,13 +53,23 @@ export async function confirmSafeToUpload(
   if (critical.length === 0) return true;
 
   const shown = critical.slice(0, 3).map((f) => `• ${f.message}`).join("\n");
-  const more = critical.length > 3 ? `\n+${critical.length - 3} more` : "";
+  const more =
+    critical.length > 3
+      ? "\n" + vscode.l10n.t("+{0} more", critical.length - 3)
+      : "";
 
+  const uploadAnyway = vscode.l10n.t("Upload Anyway");
   const choice = await vscode.window.showWarningMessage(
-    `FTP: DeploySafe found ${critical.length} critical issue(s) in "${relativeLabel}":\n${shown}${more}`,
+    vscode.l10n.t(
+      "FTP: DeploySafe found {0} critical issue(s) in \"{1}\":\n{2}{3}",
+      critical.length,
+      relativeLabel,
+      shown,
+      more
+    ),
     { modal: true },
-    "Upload Anyway"
+    uploadAnyway
   );
 
-  return choice === "Upload Anyway";
+  return choice === uploadAnyway;
 }

@@ -1,0 +1,19 @@
+{
+  "displayName": "FTP/FTPS Upload on Save",
+  "description": "Automatically upload files to an FTP/FTPS server on save, with a remote file explorer, conflict detection, and secure credential storage.",
+  "command.syncAll.title": "FTP: Sync All Files",
+  "command.toggleAutoUpload.title": "FTP: Toggle Auto-Upload on Save",
+  "command.testConnection.title": "FTP: Test Connection",
+  "command.resetPassword.title": "FTP: Reset Password",
+  "command.configureFolder.title": "FTP: Configure Connection...",
+  "command.refreshRemoteFiles.title": "FTP: Refresh Remote Files",
+  "command.openRemoteFile.title": "FTP: Open Remote File",
+  "command.downloadRemote.title": "FTP: Download",
+  "command.deleteRemote.title": "FTP: Delete Remote",
+  "command.downloadFromServer.title": "FTP: Download from Server",
+  "command.uploadToServer.title": "FTP: Upload to Server",
+  "submenu.explorerMenu.label": "FTP",
+  "view.remoteFiles.name": "FTP Remote Files",
+  "config.title": "FTP Upload on Save",
+  "config.configFile.description": "Path to the config file (relative to the workspace root)"
+}

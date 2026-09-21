@@ -1,0 +1,19 @@
+{
+  "displayName": "Upload FTP/FTPS à la sauvegarde",
+  "description": "Envoie automatiquement les fichiers vers un serveur FTP/FTPS à la sauvegarde, avec explorateur de fichiers distants, détection de conflits et stockage sécurisé des identifiants.",
+  "command.syncAll.title": "FTP : Synchroniser tous les fichiers",
+  "command.toggleAutoUpload.title": "FTP : Activer/désactiver l'envoi automatique à la sauvegarde",
+  "command.testConnection.title": "FTP : Tester la connexion",
+  "command.resetPassword.title": "FTP : Réinitialiser le mot de passe",
+  "command.configureFolder.title": "FTP : Configurer la connexion...",
+  "command.refreshRemoteFiles.title": "FTP : Actualiser les fichiers distants",
+  "command.openRemoteFile.title": "FTP : Ouvrir le fichier distant",
+  "command.downloadRemote.title": "FTP : Télécharger",
+  "command.deleteRemote.title": "FTP : Supprimer sur le serveur",
+  "command.downloadFromServer.title": "FTP : Télécharger depuis le serveur",
+  "command.uploadToServer.title": "FTP : Envoyer vers le serveur",
+  "submenu.explorerMenu.label": "FTP",
+  "view.remoteFiles.name": "Fichiers distants FTP",
+  "config.title": "Upload FTP à la sauvegarde",
+  "config.configFile.description": "Chemin du fichier de configuration (relatif à la racine du workspace)"
+}
