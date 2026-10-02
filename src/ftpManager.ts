@@ -431,13 +431,16 @@ export class FtpManager {
   // downloadToDir: if the control socket resets mid-way (long transfer,
   // server timeout), we reconnect and retry only the failed file instead
   // of losing everything.
-  // onFile is called after each downloaded file, for progress reporting
-  // on the caller's side.
+  // onFile is called after each downloaded file, for progress reporting on
+  // the caller's side. A single file failing (e.g. a broken symlink or a
+  // permission issue causing "550 Failed to open file") is reported via
+  // onError and skipped, rather than aborting the rest of the folder.
   async downloadDirectoryTo(
     remotePath: string,
     localPath: string,
     onFile?: (fileName: string) => void,
-    token?: vscode.CancellationToken
+    token?: vscode.CancellationToken,
+    onError?: (fileName: string, err: unknown) => void
   ): Promise<void> {
     if (token?.isCancellationRequested) throw new OperationCancelledError();
 
@@ -451,10 +454,15 @@ export class FtpManager {
       const childLocal = path.join(localPath, entry.name);
 
       if (entry.isDirectory) {
-        await this.downloadDirectoryTo(childRemote, childLocal, onFile, token);
+        await this.downloadDirectoryTo(childRemote, childLocal, onFile, token, onError);
       } else {
-        await this.downloadFileTo(childRemote, childLocal);
-        onFile?.(entry.name);
+        try {
+          await this.downloadFileTo(childRemote, childLocal);
+          onFile?.(entry.name);
+        } catch (err) {
+          if (err instanceof OperationCancelledError) throw err;
+          onError?.(entry.name, err);
+        }
       }
     }
   }

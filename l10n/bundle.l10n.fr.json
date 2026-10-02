@@ -1,5 +1,6 @@
 {
   "Open (read-only)": "Ouvrir (lecture seule)",
+  "FTP: download finished, but {0} file(s) failed: {1}": "FTP : téléchargement terminé, mais {0} fichier(s) en échec : {1}",
   "FTP: could not list \"{0}\" — {1}": "FTP : impossible de lister « {0} » — {1}",
   "FTP password not provided": "Mot de passe FTP non fourni",
   "Could not connect to FTP server": "Impossible de se connecter au serveur FTP",

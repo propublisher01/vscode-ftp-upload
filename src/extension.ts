@@ -187,6 +187,8 @@ export function activate(context: vscode.ExtensionContext) {
           if (confirm !== downloadLabel) return;
         }
 
+        const failed: string[] = [];
+
         try {
           await vscode.window.withProgress(
             {
@@ -219,7 +221,8 @@ export function activate(context: vscode.ExtensionContext) {
                         ),
                       });
                     },
-                    token
+                    token,
+                    (fileName, err) => failed.push(`${fileName} (${err})`)
                   );
                 } else {
                   progress.report({
@@ -230,14 +233,37 @@ export function activate(context: vscode.ExtensionContext) {
                       relative
                     ),
                   });
-                  await manager.downloadFileTo(t.remotePath, localPath);
+                  try {
+                    await manager.downloadFileTo(t.remotePath, localPath);
+                  } catch (err) {
+                    failed.push(`${relative} (${err})`);
+                  }
                 }
               }
             }
           );
-          vscode.window.showInformationMessage(
-            vscode.l10n.t("FTP: {0} item(s) downloaded.", resolved.length)
-          );
+
+          if (failed.length > 0) {
+            const list =
+              failed.length <= 5
+                ? failed.join(", ")
+                : vscode.l10n.t(
+                    "{0}, +{1} more",
+                    failed.slice(0, 5).join(", "),
+                    failed.length - 5
+                  );
+            vscode.window.showWarningMessage(
+              vscode.l10n.t(
+                "FTP: download finished, but {0} file(s) failed: {1}",
+                failed.length,
+                list
+              )
+            );
+          } else {
+            vscode.window.showInformationMessage(
+              vscode.l10n.t("FTP: {0} item(s) downloaded.", resolved.length)
+            );
+          }
         } catch (err) {
           if (err instanceof OperationCancelledError) {
             vscode.window.showInformationMessage(
@@ -390,6 +416,8 @@ export function activate(context: vscode.ExtensionContext) {
         );
         if (confirm !== downloadLabel) return;
 
+        const failed: string[] = [];
+
         try {
           await vscode.window.withProgress(
             {
@@ -409,16 +437,36 @@ export function activate(context: vscode.ExtensionContext) {
                       message: vscode.l10n.t("{0} file(s) — {1}", count, fileName),
                     });
                   },
-                  token
+                  token,
+                  (fileName, err) => failed.push(`${fileName} (${err})`)
                 );
               } else {
                 await manager.downloadFileTo(remotePath, clickedUri.fsPath);
               }
             }
           );
-          vscode.window.showInformationMessage(
-            vscode.l10n.t("FTP: \"{0}\" downloaded from server.", relative)
-          );
+
+          if (failed.length > 0) {
+            const list =
+              failed.length <= 5
+                ? failed.join(", ")
+                : vscode.l10n.t(
+                    "{0}, +{1} more",
+                    failed.slice(0, 5).join(", "),
+                    failed.length - 5
+                  );
+            vscode.window.showWarningMessage(
+              vscode.l10n.t(
+                "FTP: download finished, but {0} file(s) failed: {1}",
+                failed.length,
+                list
+              )
+            );
+          } else {
+            vscode.window.showInformationMessage(
+              vscode.l10n.t("FTP: \"{0}\" downloaded from server.", relative)
+            );
+          }
         } catch (err) {
           if (err instanceof OperationCancelledError) {
             vscode.window.showInformationMessage(

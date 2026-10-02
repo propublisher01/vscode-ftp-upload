@@ -2,7 +2,7 @@
   "name": "ftp-upload-on-save",
   "displayName": "%displayName%",
   "description": "%description%",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "publisher": "proPublisher",
   "license": "MIT",
   "engines": {

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.0
+
+- Downloading a folder no longer stops at the first file that fails (e.g. a
+  broken symlink or a permission issue causing a server "550 Failed to open
+  file"): that file is now skipped and reported in a summary at the end,
+  and the rest of the folder still downloads.
+
 ## 0.3.0
 
 - French translation of the whole interface (commands, views, settings, messages), following VS Code's display language.
