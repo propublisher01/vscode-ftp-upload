@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.4.1
+
+- The setup wizard's generated `ftp-sync.json` now ignores `.vscode/**` by
+  default, alongside `.git/**` and `node_modules/**`.
+- Downloading several selected folders (or a folder containing
+  subfolders) no longer gives up on everything else when one subfolder
+  fails: that subfolder is skipped and reported, siblings and other
+  selected items still download.
+
 ## 0.4.0
 
 - Downloading a folder no longer stops at the first file that fails (e.g. a

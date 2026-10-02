@@ -454,7 +454,12 @@ export class FtpManager {
       const childLocal = path.join(localPath, entry.name);
 
       if (entry.isDirectory) {
-        await this.downloadDirectoryTo(childRemote, childLocal, onFile, token, onError);
+        try {
+          await this.downloadDirectoryTo(childRemote, childLocal, onFile, token, onError);
+        } catch (err) {
+          if (err instanceof OperationCancelledError) throw err;
+          onError?.(entry.name + "/", err);
+        }
       } else {
         try {
           await this.downloadFileTo(childRemote, childLocal);

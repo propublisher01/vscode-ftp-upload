@@ -203,41 +203,42 @@ export function activate(context: vscode.ExtensionContext) {
                 }
                 const { item: t, relative, localPath } = resolved[i];
 
-                if (t.isDirectory) {
-                  let count = 0;
-                  await manager.downloadDirectoryTo(
-                    t.remotePath,
-                    localPath,
-                    (fileName) => {
-                      count++;
-                      progress.report({
-                        message: vscode.l10n.t(
-                          "[{0}/{1}] {2} — {3} file(s) — {4}",
-                          i + 1,
-                          resolved.length,
-                          relative,
-                          count,
-                          fileName
-                        ),
-                      });
-                    },
-                    token,
-                    (fileName, err) => failed.push(`${fileName} (${err})`)
-                  );
-                } else {
-                  progress.report({
-                    message: vscode.l10n.t(
-                      "[{0}/{1}] {2}",
-                      i + 1,
-                      resolved.length,
-                      relative
-                    ),
-                  });
-                  try {
+                try {
+                  if (t.isDirectory) {
+                    let count = 0;
+                    await manager.downloadDirectoryTo(
+                      t.remotePath,
+                      localPath,
+                      (fileName) => {
+                        count++;
+                        progress.report({
+                          message: vscode.l10n.t(
+                            "[{0}/{1}] {2} — {3} file(s) — {4}",
+                            i + 1,
+                            resolved.length,
+                            relative,
+                            count,
+                            fileName
+                          ),
+                        });
+                      },
+                      token,
+                      (fileName, err) => failed.push(`${relative}/${fileName} (${err})`)
+                    );
+                  } else {
+                    progress.report({
+                      message: vscode.l10n.t(
+                        "[{0}/{1}] {2}",
+                        i + 1,
+                        resolved.length,
+                        relative
+                      ),
+                    });
                     await manager.downloadFileTo(t.remotePath, localPath);
-                  } catch (err) {
-                    failed.push(`${relative} (${err})`);
                   }
+                } catch (err) {
+                  if (err instanceof OperationCancelledError) throw err;
+                  failed.push(`${relative} (${err})`);
                 }
               }
             }
@@ -826,7 +827,7 @@ export function activate(context: vscode.ExtensionContext) {
           user,
           localRoot: existing?.localRoot ?? ".",
           remoteRoot,
-          ignore: existing?.ignore ?? [".git/**", "node_modules/**"],
+          ignore: existing?.ignore ?? [".git/**", "node_modules/**", ".vscode/**"],
           uploadOnSave: existing?.uploadOnSave ?? true,
           scanBeforeUpload: existing?.scanBeforeUpload ?? true,
           checkRemoteModifiedTime: existing?.checkRemoteModifiedTime ?? true,

@@ -20,7 +20,7 @@ const DEFAULTS: Partial<FtpSyncConfig> = {
   port: 21,
   secure: true,
   localRoot: ".",
-  ignore: [".git/**", "node_modules/**"],
+  ignore: [".git/**", "node_modules/**", ".vscode/**"],
   uploadOnSave: true,
   scanBeforeUpload: true,
   checkRemoteModifiedTime: true,
